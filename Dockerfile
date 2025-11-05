@@ -52,6 +52,8 @@ ENV PATH="/app/node_modules/.bin:${PATH}"
 
 # (Opcional) libs extras; em Debian geralmente não precisa para Next
 # RUN apt-get update && apt-get install -y --no-install-recommends libvips && rm -rf /var/lib/apt/lists/*
+# Gera cliente Prisma
+RUN npx prisma generate
 
 RUN npm run build
 
