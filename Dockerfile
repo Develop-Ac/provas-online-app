@@ -50,6 +50,10 @@ COPY . .
 # Binários do node_modules no PATH
 ENV PATH="/app/node_modules/.bin:${PATH}"
 
+# <<< CORREÇÃO PUBLIC FAILED NOT FOUND >>>
+# Garante que o diretório 'public' exista para que o COPY na stage 'runner' não falhe.
+RUN mkdir -p public
+
 # <<< CORREÇÃO PRISMA/OPENSSL >>>
 # Instala a libssl (libssl.so.1.1) necessária para o Query Engine do Prisma
 RUN apt-get update && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
