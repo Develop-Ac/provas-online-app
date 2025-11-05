@@ -3,35 +3,24 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Clock, CheckCircle, AlertCircle, User } from 'lucide-react'
+import type { Question, Exam } from '@/types'
 
-interface Question {
-  id: string
-  question: string
-  optionA: string
-  optionB: string
-  optionC: string
-  optionD: string
-  order: number
+interface ExamPageParams {
+  params: {
+    id: string
+  }
 }
 
-interface Exam {
-  id: string
-  title: string
-  description?: string
-  duration: number
-  questions: Question[]
-}
-
-export default function FazerProvaPage({ params }: { params: { id: string } }) {
+export default function FazerProvaPage({ params }: ExamPageParams) {
   const router = useRouter()
   const [exam, setExam] = useState<Exam | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [studentName, setStudentName] = useState('')
-  const [started, setStarted] = useState(false)
-  const [currentQuestion, setCurrentQuestion] = useState(0)
+  const [loading, setLoading] = useState<boolean>(true)
+  const [studentName, setStudentName] = useState<string>('')
+  const [started, setStarted] = useState<boolean>(false)
+  const [currentQuestion, setCurrentQuestion] = useState<number>(0)
   const [answers, setAnswers] = useState<Record<string, string>>({})
-  const [timeLeft, setTimeLeft] = useState(0)
-  const [submitting, setSubmitting] = useState(false)
+  const [timeLeft, setTimeLeft] = useState<number>(0)
+  const [submitting, setSubmitting] = useState<boolean>(false)
 
   useEffect(() => {
     fetchExam()
@@ -53,11 +42,11 @@ export default function FazerProvaPage({ params }: { params: { id: string } }) {
     }
   }, [started, timeLeft])
 
-  const fetchExam = async () => {
+  const fetchExam = async (): Promise<void> => {
     try {
-      const response = await fetch(`/api/exams/${params.id}`)
+      const response: Response = await fetch(`/api/exams/${params.id}`)
       if (response.ok) {
-        const data = await response.json()
+        const data: Exam = await response.json()
         setExam(data)
         setTimeLeft(data.duration * 60) // converter para segundos
       } else {
@@ -71,7 +60,7 @@ export default function FazerProvaPage({ params }: { params: { id: string } }) {
     }
   }
 
-  const startExam = () => {
+  const startExam = (): void => {
     if (!studentName.trim()) {
       alert('Por favor, informe seu nome')
       return
@@ -79,19 +68,19 @@ export default function FazerProvaPage({ params }: { params: { id: string } }) {
     setStarted(true)
   }
 
-  const selectAnswer = (questionId: string, option: string) => {
+  const selectAnswer = (questionId: string, option: string): void => {
     setAnswers(prev => ({
       ...prev,
       [questionId]: option
     }))
   }
 
-  const submitExam = async () => {
-    if (submitting) return
+  const submitExam = async (): Promise<void> => {
+    if (submitting || !exam?.questions) return
     setSubmitting(true)
 
     try {
-      const examAnswers = exam!.questions.map(question => ({
+      const examAnswers = exam.questions.map((question: Question) => ({
         questionId: question.id,
         selectedOption: answers[question.id] || null
       }))
@@ -122,13 +111,13 @@ export default function FazerProvaPage({ params }: { params: { id: string } }) {
     }
   }
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
+  const formatTime = (seconds: number): string => {
+    const mins: number = Math.floor(seconds / 60)
+    const secs: number = seconds % 60
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
   }
 
-  const getAnsweredCount = () => {
+  const getAnsweredCount = (): number => {
     return Object.keys(answers).length
   }
 
@@ -213,7 +202,7 @@ export default function FazerProvaPage({ params }: { params: { id: string } }) {
                   
                   <div className="glass-effect p-6 rounded-2xl text-center">
                     <CheckCircle className="w-8 h-8 text-emerald-600 mx-auto mb-3" />
-                    <div className="text-2xl font-bold text-slate-800">{exam.questions.length}</div>
+                    <div className="text-2xl font-bold text-slate-800">{exam.questions?.length || 0}</div>
                     <div className="text-sm text-slate-600">questões</div>
                   </div>
                 </div>
@@ -255,7 +244,11 @@ export default function FazerProvaPage({ params }: { params: { id: string } }) {
     )
   }
 
-  const question = exam.questions[currentQuestion]
+  if (!exam.questions || exam.questions.length === 0) {
+    return <div>Prova sem questões disponíveis</div>
+  }
+
+  const question: Question = exam.questions[currentQuestion]
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
@@ -292,7 +285,7 @@ export default function FazerProvaPage({ params }: { params: { id: string } }) {
                 
                 <div className="text-center">
                   <div className="text-2xl font-bold text-emerald-600">
-                    {getAnsweredCount()}/{exam.questions.length}
+                    {getAnsweredCount()}/{exam.questions?.length || 0}
                   </div>
                   <div className="text-xs text-slate-500">Respondidas</div>
                 </div>
@@ -303,13 +296,13 @@ export default function FazerProvaPage({ params }: { params: { id: string } }) {
           {/* Progress Bar */}
           <div className="mb-6 animate-fade-up" style={{animationDelay: '0.1s'}}>
             <div className="flex justify-between text-sm text-slate-600 mb-3">
-              <span className="font-medium">Questão {currentQuestion + 1} de {exam.questions.length}</span>
-              <span className="font-medium">{Math.round(((currentQuestion + 1) / exam.questions.length) * 100)}% concluído</span>
+              <span className="font-medium">Questão {currentQuestion + 1} de {exam.questions?.length || 0}</span>
+              <span className="font-medium">{Math.round(((currentQuestion + 1) / (exam.questions?.length || 1)) * 100)}% concluído</span>
             </div>
             <div className="w-full bg-slate-200 rounded-full h-3 overflow-hidden">
               <div 
                 className="progress-bar h-3 rounded-full transition-all duration-500 shadow-sm"
-                style={{ width: `${((currentQuestion + 1) / exam.questions.length) * 100}%` }}
+                style={{ width: `${((currentQuestion + 1) / (exam.questions?.length || 1)) * 100}%` }}
               ></div>
             </div>
           </div>
@@ -378,7 +371,7 @@ export default function FazerProvaPage({ params }: { params: { id: string } }) {
             </button>
 
             <div className="flex flex-wrap justify-center gap-2 max-w-md">
-              {exam.questions.map((_, index) => (
+              {exam.questions?.map((question, index) => (
                 <button
                   key={index}
                   onClick={() => setCurrentQuestion(index)}
@@ -386,7 +379,7 @@ export default function FazerProvaPage({ params }: { params: { id: string } }) {
                     w-12 h-12 rounded-xl font-bold text-sm transition-all duration-300
                     ${index === currentQuestion
                       ? 'bg-gradient-to-br from-indigo-500 to-indigo-600 text-white shadow-lg scale-110'
-                      : answers[exam.questions[index].id]
+                      : answers[question.id]
                       ? 'bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-md hover:scale-105'
                       : 'bg-white border-2 border-slate-200 text-slate-600 hover:border-indigo-300 hover:text-indigo-600 hover:scale-105'
                     }
@@ -394,10 +387,10 @@ export default function FazerProvaPage({ params }: { params: { id: string } }) {
                 >
                   {index + 1}
                 </button>
-              ))}
+              )) || []}
             </div>
 
-            {currentQuestion === exam.questions.length - 1 ? (
+            {currentQuestion === (exam.questions?.length || 1) - 1 ? (
               <button
                 onClick={submitExam}
                 disabled={submitting}
@@ -414,7 +407,7 @@ export default function FazerProvaPage({ params }: { params: { id: string } }) {
               </button>
             ) : (
               <button
-                onClick={() => setCurrentQuestion(Math.min(exam.questions.length - 1, currentQuestion + 1))}
+                onClick={() => setCurrentQuestion(Math.min((exam.questions?.length || 1) - 1, currentQuestion + 1))}
                 className="btn-primary px-6 py-3 rounded-xl font-medium"
               >
                 Próxima →

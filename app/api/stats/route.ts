@@ -1,7 +1,17 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import type { 
+  PrismaExamWithStats, 
+  PrismaRecentAttempt, 
+  ExamStatistic,
+  ScoreDistribution,
+  MonthlyAttemptData,
+  DashboardData,
+  DashboardOverview,
+  RecentAttempt
+} from '@/types'
 
-export async function GET() {
+export async function GET(): Promise<NextResponse<DashboardData | { error: string }>> {
   try {
     // Estatísticas gerais
     const [
@@ -87,26 +97,10 @@ export async function GET() {
     ])
 
     // Calcular estatísticas das provas
-    const examStatsWithAvg = examStats.map((exam: any) => {
-      interface ExamAttempt {
-        score: number | null;
-        completedAt: Date | null;
-      }
-
-      interface ExamWithStats {
-        id: string;
-        title: string;
-        createdAt: Date;
-        _count: {
-          attempts: number;
-          questions: number;
-        };
-        attempts: ExamAttempt[];
-      }
-
-      const scores: number[] = exam.attempts.map((attempt: ExamAttempt) => attempt.score || 0)
-      const avgScore = scores.length > 0 
-        ? scores.reduce((sum, score) => sum + score, 0) / scores.length
+    const examStatsWithAvg: ExamStatistic[] = examStats.map((exam: PrismaExamWithStats) => {
+      const scores: number[] = exam.attempts.map((attempt) => attempt.score || 0)
+      const avgScore: number = scores.length > 0 
+        ? scores.reduce((sum: number, score: number) => sum + score, 0) / scores.length
         : 0
 
       return {
@@ -114,13 +108,13 @@ export async function GET() {
         title: exam.title,
         totalAttempts: exam._count.attempts,
         totalQuestions: exam._count.questions,
-        avgScore: avgScore,
+        avgScore: Math.round(avgScore * 100) / 100, // Arredondar para 2 casas decimais
         createdAt: exam.createdAt
       }
     })
 
     // Distribuição de notas em faixas
-    const scoreRanges = {
+    const scoreRanges: ScoreDistribution = {
       excellent: 0, // 90-100
       good: 0,      // 70-89
       average: 0,   // 50-69
@@ -128,7 +122,7 @@ export async function GET() {
     }
 
     scoreDistribution.forEach((attempt: { score: number | null }) => {
-      const score = attempt.score || 0
+      const score: number = attempt.score || 0
       if (score >= 90) scoreRanges.excellent++
       else if (score >= 70) scoreRanges.good++
       else if (score >= 50) scoreRanges.average++
@@ -136,7 +130,7 @@ export async function GET() {
     })
 
     // Tentativas por mês nos últimos 6 meses
-    const sixMonthsAgo = new Date()
+    const sixMonthsAgo: Date = new Date()
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
 
     const monthlyAttempts = await prisma.examAttempt.findMany({
@@ -152,13 +146,14 @@ export async function GET() {
     })
 
     // Agrupar por mês
-    const monthlyStats = Array.from({ length: 6 }, (_, i) => {
-      const date = new Date()
+    const monthlyStats: MonthlyAttemptData[] = Array.from({ length: 6 }, (_, i: number) => {
+      const date: Date = new Date()
       date.setMonth(date.getMonth() - (5 - i))
-      const monthName = date.toLocaleDateString('pt-BR', { month: 'short' })
+      const monthName: string = date.toLocaleDateString('pt-BR', { month: 'short' })
       
-      const count = monthlyAttempts.filter(attempt => {
-        const attemptDate = new Date(attempt.completedAt!)
+      const count: number = monthlyAttempts.filter((attempt: { completedAt: Date | null }) => {
+        if (!attempt.completedAt) return false
+        const attemptDate: Date = new Date(attempt.completedAt)
         return attemptDate.getMonth() === date.getMonth() && 
                attemptDate.getFullYear() === date.getFullYear()
       }).length
@@ -169,25 +164,31 @@ export async function GET() {
       }
     })
 
-    const stats = {
-      overview: {
-        totalExams,
-        totalAttempts,
-        avgScore: avgScore._avg.score || 0,
-        totalStudents: await prisma.examAttempt.groupBy({
-          by: ['studentName'],
-          where: {
-            completedAt: { not: null }
-          }
-        }).then(groups => groups.length)
-      },
-      recentAttempts: recentAttempts.map(attempt => ({
-        id: attempt.id,
-        studentName: attempt.studentName,
-        examTitle: attempt.exam.title,
-        score: attempt.score,
-        completedAt: attempt.completedAt
-      })),
+    const totalStudents: number = await prisma.examAttempt.groupBy({
+      by: ['studentName'],
+      where: {
+        completedAt: { not: null }
+      }
+    }).then((groups: Array<{ studentName: string }>) => groups.length)
+
+    const overview: DashboardOverview = {
+      totalExams,
+      totalAttempts,
+      avgScore: Math.round((avgScore._avg.score || 0) * 100) / 100,
+      totalStudents
+    }
+
+    const formattedRecentAttempts: RecentAttempt[] = recentAttempts.map((attempt: PrismaRecentAttempt) => ({
+      id: attempt.id,
+      studentName: attempt.studentName,
+      examTitle: attempt.exam.title,
+      score: attempt.score,
+      completedAt: attempt.completedAt
+    }))
+
+    const stats: DashboardData = {
+      overview,
+      recentAttempts: formattedRecentAttempts,
       examStats: examStatsWithAvg,
       scoreDistribution: scoreRanges,
       monthlyAttempts: monthlyStats

@@ -4,10 +4,17 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Home, PlusCircle, BookOpen, BarChart3, GraduationCap } from 'lucide-react'
 
-export default function Navigation() {
-  const pathname = usePathname()
+interface NavItem {
+  href: string
+  label: string
+  icon: React.ElementType
+  color: 'indigo' | 'emerald' | 'blue' | 'purple'
+}
 
-  const navItems = [
+export default function Navigation() {
+  const pathname: string = usePathname()
+
+  const navItems: NavItem[] = [
     { href: '/', label: 'Início', icon: Home, color: 'indigo' },
     { href: '/criar-prova', label: 'Criar Prova', icon: PlusCircle, color: 'emerald' },
     { href: '/provas', label: 'Provas', icon: BookOpen, color: 'blue' },
@@ -36,11 +43,11 @@ export default function Navigation() {
 
           {/* Navigation Links */}
           <div className="flex items-center space-x-2">
-            {navItems.map((item) => {
+            {navItems.map((item: NavItem) => {
               const Icon = item.icon
-              const isActive = pathname === item.href
+              const isActive: boolean = pathname === item.href
               
-              const colorClasses = {
+              const colorClasses: Record<NavItem['color'], string> = {
                 indigo: isActive 
                   ? 'text-indigo-600 bg-indigo-50 border-indigo-200' 
                   : 'text-slate-600 hover:text-indigo-600 hover:bg-indigo-50/50',

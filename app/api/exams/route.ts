@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import type { Exam, CreateExamRequest, QuestionFormData } from '@/types'
 
 // GET - Listar todas as provas
-export async function GET() {
+export async function GET(): Promise<NextResponse<Exam[] | { error: string }>> {
   try {
     const exams = await prisma.exam.findMany({
       include: {
@@ -33,9 +34,9 @@ export async function GET() {
 }
 
 // POST - Criar uma nova prova
-export async function POST(request: Request) {
+export async function POST(request: Request): Promise<NextResponse<Exam | { error: string }>> {
   try {
-    const body = await request.json()
+    const body: CreateExamRequest = await request.json()
     const { title, description, duration, questions, questionsToShow, randomizeQuestions } = body
 
     // Validações básicas
@@ -47,20 +48,22 @@ export async function POST(request: Request) {
     }
 
     // Calcular valores para os novos campos
-    const totalQuestions = questions.length
-    const finalQuestionsToShow = questionsToShow > 0 ? Math.min(questionsToShow, totalQuestions) : totalQuestions
+    const totalQuestions: number = questions.length
+    const finalQuestionsToShow: number = questionsToShow && questionsToShow > 0 
+      ? Math.min(questionsToShow, totalQuestions) 
+      : totalQuestions
 
     // Criar a prova com as questões
     const exam = await prisma.exam.create({
       data: {
         title,
-        description,
+        description: description || null,
         duration,
         totalQuestions,
         questionsToShow: finalQuestionsToShow,
         randomizeQuestions: randomizeQuestions || false,
         questions: {
-          create: questions.map((question: any, index: number) => ({
+          create: questions.map((question: QuestionFormData, index: number) => ({
             question: question.question,
             optionA: question.optionA,
             optionB: question.optionB,

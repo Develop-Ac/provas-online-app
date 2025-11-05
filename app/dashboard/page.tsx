@@ -4,49 +4,14 @@ import { useState, useEffect } from 'react'
 import { BarChart3, Users, FileText, TrendingUp, Clock, Award, Eye } from 'lucide-react'
 import Charts from '@/components/Charts'
 
-interface Overview {
-  totalExams: number
-  totalAttempts: number
-  avgScore: number
-  totalStudents: number
-}
-
-interface RecentAttempt {
-  id: string
-  studentName: string
-  examTitle: string
-  score: number
-  completedAt: string
-}
-
-interface ExamStat {
-  id: string
-  title: string
-  totalAttempts: number
-  totalQuestions: number
-  avgScore: number
-  createdAt: string
-}
-
-interface ScoreDistribution {
-  excellent: number
-  good: number
-  average: number
-  poor: number
-}
-
-interface MonthlyAttempt {
-  month: string
-  attempts: number
-}
-
-interface DashboardData {
-  overview: Overview
-  recentAttempts: RecentAttempt[]
-  examStats: ExamStat[]
-  scoreDistribution: ScoreDistribution
-  monthlyAttempts: MonthlyAttempt[]
-}
+import type { 
+  DashboardData,
+  DashboardOverview,
+  RecentAttempt,
+  ExamStatistic,
+  ScoreDistribution,
+  MonthlyAttemptData
+} from '@/types'
 
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null)
@@ -56,11 +21,11 @@ export default function DashboardPage() {
     fetchStats()
   }, [])
 
-  const fetchStats = async () => {
+  const fetchStats = async (): Promise<void> => {
     try {
-      const response = await fetch('/api/stats')
+      const response: Response = await fetch('/api/stats')
       if (response.ok) {
-        const statsData = await response.json()
+        const statsData: DashboardData = await response.json()
         setData(statsData)
       }
     } catch (error) {
@@ -70,8 +35,9 @@ export default function DashboardPage() {
     }
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR', {
+  const formatDate = (date: string | Date | null): string => {
+    if (!date) return 'Data não disponível'
+    return new Date(date).toLocaleDateString('pt-BR', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
@@ -80,7 +46,8 @@ export default function DashboardPage() {
     })
   }
 
-  const getScoreColor = (score: number) => {
+  const getScoreColor = (score: number | null): string => {
+    if (!score) return 'text-gray-600 bg-gray-100'
     if (score >= 80) return 'text-green-600 bg-green-100'
     if (score >= 60) return 'text-yellow-600 bg-yellow-100'
     return 'text-red-600 bg-red-100'

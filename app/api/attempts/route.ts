@@ -1,9 +1,30 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import type { ExamAttempt } from '@/types'
 
-export async function POST(request: Request) {
+interface SubmitAttemptRequest {
+  examId: string
+  studentName: string
+  answers: Array<{
+    questionId: string
+    selectedOption: string
+  }>
+}
+
+interface ProcessedAnswer {
+  questionId: string
+  selectedOption: string
+  isCorrect: boolean
+}
+
+interface ExamQuestion {
+  id: string
+  correctOption: string
+}
+
+export async function POST(request: Request): Promise<NextResponse<ExamAttempt | { error: string }>> {
   try {
-    const body = await request.json()
+    const body: SubmitAttemptRequest = await request.json()
     const { examId, studentName, answers } = body
 
     // Validações básicas
@@ -35,20 +56,20 @@ export async function POST(request: Request) {
     }
 
     // Calcular pontuação
-    let correctAnswers = 0
-    const processedAnswers = answers.map((answer: any) => {
-      const question = exam.questions.find((q: { id: string; correctOption: string }) => q.id === answer.questionId)
-      const isCorrect = question && question.correctOption === answer.selectedOption
+    let correctAnswers: number = 0
+    const processedAnswers: ProcessedAnswer[] = answers.map((answer) => {
+      const question: ExamQuestion | undefined = exam.questions.find((q) => q.id === answer.questionId)
+      const isCorrect: boolean = question ? question.correctOption === answer.selectedOption : false
       if (isCorrect) correctAnswers++
       
       return {
         questionId: answer.questionId,
         selectedOption: answer.selectedOption,
-        isCorrect: isCorrect || false
+        isCorrect
       }
     })
 
-    const score = (correctAnswers / exam.questions.length) * 100
+    const score: number = Math.round((correctAnswers / exam.questions.length) * 100)
 
     // Criar tentativa com respostas
     const attempt = await prisma.examAttempt.create({

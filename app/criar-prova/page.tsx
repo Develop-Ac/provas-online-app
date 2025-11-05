@@ -43,7 +43,7 @@ export default function CriarProvaPage() {
     ]
   })
 
-  const addQuestion = () => {
+  const addQuestion = (): void => {
     setExam(prev => ({
       ...prev,
       questions: [
@@ -60,7 +60,7 @@ export default function CriarProvaPage() {
     }))
   }
 
-  const removeQuestion = (index: number) => {
+  const removeQuestion = (index: number): void => {
     if (exam.questions.length > 1) {
       setExam(prev => ({
         ...prev,
@@ -69,7 +69,7 @@ export default function CriarProvaPage() {
     }
   }
 
-  const updateQuestion = (index: number, field: keyof Question, value: string) => {
+  const updateQuestion = (index: number, field: keyof Question, value: string): void => {
     setExam(prev => ({
       ...prev,
       questions: prev.questions.map((q, i) => 
@@ -78,12 +78,12 @@ export default function CriarProvaPage() {
     }))
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault()
     setIsLoading(true)
 
     try {
-      const response = await fetch('/api/exams', {
+      const response: Response = await fetch('/api/exams', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

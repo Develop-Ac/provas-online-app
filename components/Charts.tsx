@@ -187,9 +187,9 @@ export default function Charts({ scoreDistribution, monthlyAttempts, examStats }
       {
         label: 'Nota Média (%)',
         data: examStats.slice(0, 8).map(exam => exam.avgScore),
-        backgroundColor: (context: any) => {
-          const ctx = context.chart.ctx;
-          const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        backgroundColor: (context: { chart: { ctx: CanvasRenderingContext2D } }) => {
+          const ctx: CanvasRenderingContext2D = context.chart.ctx;
+          const gradient: CanvasGradient = ctx.createLinearGradient(0, 0, 0, 400);
           gradient.addColorStop(0, 'rgba(16, 185, 129, 0.8)');
           gradient.addColorStop(1, 'rgba(16, 185, 129, 0.4)');
           return gradient;
@@ -244,7 +244,7 @@ export default function Charts({ scoreDistribution, monthlyAttempts, examStats }
             size: 12
           },
           color: '#64748b', // slate-500
-          callback: function(value: any) {
+          callback: function(value: string | number): string {
             return value + '%'
           }
         }

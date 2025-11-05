@@ -3,35 +3,21 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Clock, FileText, Users, Calendar, Play, BookOpen, PlusCircle, Shuffle } from 'lucide-react'
-
-interface Exam {
-  id: string
-  title: string
-  description?: string
-  duration: number
-  totalQuestions: number
-  questionsToShow: number
-  randomizeQuestions: boolean
-  createdAt: string
-  questions: { id: string }[]
-  _count: {
-    attempts: number
-  }
-}
+import type { Exam } from '@/types'
 
 export default function ProvasPage() {
   const [exams, setExams] = useState<Exam[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState<boolean>(true)
 
   useEffect(() => {
     fetchExams()
   }, [])
 
-  const fetchExams = async () => {
+  const fetchExams = async (): Promise<void> => {
     try {
-      const response = await fetch('/api/exams')
+      const response: Response = await fetch('/api/exams')
       if (response.ok) {
-        const data = await response.json()
+        const data: Exam[] = await response.json()
         setExams(data)
       }
     } catch (error) {
@@ -41,7 +27,7 @@ export default function ProvasPage() {
     }
   }
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | Date): string => {
     return new Date(dateString).toLocaleDateString('pt-BR', {
       day: '2-digit',
       month: '2-digit',
@@ -183,7 +169,7 @@ export default function ProvasPage() {
                       <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-2">
                         <Users className="w-5 h-5 text-purple-600" />
                       </div>
-                      <div className="text-sm font-semibold text-slate-800">{exam._count.attempts}</div>
+                      <div className="text-sm font-semibold text-slate-800">{exam._count?.attempts || 0}</div>
                       <div className="text-xs text-slate-500">Tentativas</div>
                     </div>
                   </div>
