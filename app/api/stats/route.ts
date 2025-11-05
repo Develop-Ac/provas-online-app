@@ -87,8 +87,24 @@ export async function GET() {
     ])
 
     // Calcular estatísticas das provas
-    const examStatsWithAvg = examStats.map(exam => {
-      const scores = exam.attempts.map(attempt => attempt.score || 0)
+    const examStatsWithAvg = examStats.map((exam: any) => {
+      interface ExamAttempt {
+        score: number | null;
+        completedAt: Date | null;
+      }
+
+      interface ExamWithStats {
+        id: string;
+        title: string;
+        createdAt: Date;
+        _count: {
+          attempts: number;
+          questions: number;
+        };
+        attempts: ExamAttempt[];
+      }
+
+      const scores: number[] = exam.attempts.map((attempt: ExamAttempt) => attempt.score || 0)
       const avgScore = scores.length > 0 
         ? scores.reduce((sum, score) => sum + score, 0) / scores.length
         : 0
