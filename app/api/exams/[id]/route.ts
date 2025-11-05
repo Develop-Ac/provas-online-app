@@ -45,7 +45,7 @@ export async function GET(
       // Pegar apenas o número especificado
       finalQuestions = shuffled.slice(0, exam.questionsToShow)
       // Reordenar para apresentação
-      finalQuestions = finalQuestions.map((q: any, index) => ({ ...q, order: index + 1 }))
+      finalQuestions = finalQuestions.map((q: any, index: number) => ({ ...q, order: index + 1 }))
     } else if (exam.questionsToShow > 0 && exam.questionsToShow < exam.questions.length) {
       // Se não é aleatório, pegar as primeiras N questões
       finalQuestions = exam.questions.slice(0, exam.questionsToShow)
