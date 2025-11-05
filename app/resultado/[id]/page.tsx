@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { CheckCircle, XCircle, Clock, User, FileText, TrendingUp } from 'lucide-react'
 
@@ -37,11 +37,7 @@ export default function ResultadoPage({ params }: { params: { id: string } }) {
   const [result, setResult] = useState<AttemptResult | null>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    fetchResult()
-  }, [])
-
-  const fetchResult = async () => {
+  const fetchResult = useCallback(async () => {
     try {
       const response = await fetch(`/api/attempts/${params.id}`)
       if (response.ok) {
@@ -53,7 +49,11 @@ export default function ResultadoPage({ params }: { params: { id: string } }) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [params.id])
+
+  useEffect(() => {
+    fetchResult()
+  }, [fetchResult])
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return 'text-green-600'

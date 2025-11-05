@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Clock, CheckCircle, AlertCircle, User } from 'lucide-react'
 import type { Question, Exam } from '@/types'
@@ -22,27 +22,7 @@ export default function FazerProvaPage({ params }: ExamPageParams) {
   const [timeLeft, setTimeLeft] = useState<number>(0)
   const [submitting, setSubmitting] = useState<boolean>(false)
 
-  useEffect(() => {
-    fetchExam()
-  }, [])
-
-  useEffect(() => {
-    if (started && timeLeft > 0) {
-      const timer = setInterval(() => {
-        setTimeLeft(prev => {
-          if (prev <= 1) {
-            submitExam()
-            return 0
-          }
-          return prev - 1
-        })
-      }, 1000)
-
-      return () => clearInterval(timer)
-    }
-  }, [started, timeLeft])
-
-  const fetchExam = async (): Promise<void> => {
+  const fetchExam = useCallback(async (): Promise<void> => {
     try {
       const response: Response = await fetch(`/api/exams/${params.id}`)
       if (response.ok) {
@@ -58,24 +38,9 @@ export default function FazerProvaPage({ params }: ExamPageParams) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [params.id, router])
 
-  const startExam = (): void => {
-    if (!studentName.trim()) {
-      alert('Por favor, informe seu nome')
-      return
-    }
-    setStarted(true)
-  }
-
-  const selectAnswer = (questionId: string, option: string): void => {
-    setAnswers(prev => ({
-      ...prev,
-      [questionId]: option
-    }))
-  }
-
-  const submitExam = async (): Promise<void> => {
+  const submitExam = useCallback(async (): Promise<void> => {
     if (submitting || !exam?.questions) return
     setSubmitting(true)
 
@@ -109,6 +74,41 @@ export default function FazerProvaPage({ params }: ExamPageParams) {
     } finally {
       setSubmitting(false)
     }
+  }, [submitting, exam?.questions, answers, params.id, studentName, router])
+
+  useEffect(() => {
+    fetchExam()
+  }, [fetchExam])
+
+  useEffect(() => {
+    if (started && timeLeft > 0) {
+      const timer = setInterval(() => {
+        setTimeLeft(prev => {
+          if (prev <= 1) {
+            submitExam()
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+
+      return () => clearInterval(timer)
+    }
+  }, [started, timeLeft, submitExam])
+
+  const startExam = (): void => {
+    if (!studentName.trim()) {
+      alert('Por favor, informe seu nome')
+      return
+    }
+    setStarted(true)
+  }
+
+  const selectAnswer = (questionId: string, option: string): void => {
+    setAnswers(prev => ({
+      ...prev,
+      [questionId]: option
+    }))
   }
 
   const formatTime = (seconds: number): string => {

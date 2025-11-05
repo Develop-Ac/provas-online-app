@@ -1,10 +1,17 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import type { ExamAttempt } from '@/types'
+
+interface RouteParams {
+  params: {
+    id: string
+  }
+}
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
-) {
+  { params }: RouteParams
+): Promise<NextResponse<ExamAttempt | { error: string }>> {
   try {
     const attempt = await prisma.examAttempt.findUnique({
       where: {
