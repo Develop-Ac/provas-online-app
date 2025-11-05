@@ -58,7 +58,7 @@ export async function POST(request: Request): Promise<NextResponse<ExamAttempt |
     // Calcular pontuação
     let correctAnswers: number = 0
     const processedAnswers: ProcessedAnswer[] = answers.map((answer) => {
-      const question: ExamQuestion | undefined = exam.questions.find((q) => q.id === answer.questionId)
+      const question: ExamQuestion | undefined = exam.questions.find((q: ExamQuestion) => q.id === answer.questionId)
       const isCorrect: boolean = question ? question.correctOption === answer.selectedOption : false
       if (isCorrect) correctAnswers++
       
