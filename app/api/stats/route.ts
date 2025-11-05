@@ -127,7 +127,7 @@ export async function GET() {
       poor: 0       // 0-49
     }
 
-    scoreDistribution.forEach(attempt => {
+    scoreDistribution.forEach((attempt: { score: number | null }) => {
       const score = attempt.score || 0
       if (score >= 90) scoreRanges.excellent++
       else if (score >= 70) scoreRanges.good++
