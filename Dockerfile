@@ -44,15 +44,18 @@ ENV CI=true \
 
 # node_modules completos para compilar
 COPY --from=deps /app/node_modules ./node_modules
-# código da aplicação
+# código da aplicação (inclui schema.prisma, public, etc.)
 COPY . .
 
 # Binários do node_modules no PATH
 ENV PATH="/app/node_modules/.bin:${PATH}"
 
-# (Opcional) libs extras; em Debian geralmente não precisa para Next
-# RUN apt-get update && apt-get install -y --no-install-recommends libvips && rm -rf /var/lib/apt/lists/*
-# Gera cliente Prisma
+# <<< CORREÇÃO PRISMA/OPENSSL >>>
+# Instala a libssl (libssl.so.1.1) necessária para o Query Engine do Prisma
+RUN apt-get update && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
+
+# <<< CORREÇÃO PRISMA/GENERATE >>>
+# Gera o Prisma Client antes do build do Next.js
 RUN npx prisma generate
 
 RUN npm run build
@@ -73,6 +76,10 @@ WORKDIR /app
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
     PORT=3000
+
+# <<< CORREÇÃO PRISMA/OPENSSL >>>
+# Instala a libssl para o runtime do Query Engine
+RUN apt-get update && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
 
 # Artefatos do build
 COPY --from=builder /app/.next ./.next
