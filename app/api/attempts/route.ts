@@ -37,7 +37,7 @@ export async function POST(request: Request) {
     // Calcular pontuação
     let correctAnswers = 0
     const processedAnswers = answers.map((answer: any) => {
-      const question = exam.questions.find(q => q.id === answer.questionId)
+      const question = exam.questions.find((q: { id: string; correctOption: string }) => q.id === answer.questionId)
       const isCorrect = question && question.correctOption === answer.selectedOption
       if (isCorrect) correctAnswers++
       
